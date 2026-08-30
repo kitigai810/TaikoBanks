@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<ApplicationIcon>TaikoStormIcon3.ico</ApplicationIcon>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DiscordRichPresence" Version="1.6.1.70" />
+		<PackageReference Include="FFMediaToolkit" Version="4.8.1" />
+		<PackageReference Include="HarfBuzzSharp" Version="14.2.1.1" />
+		<PackageReference Include="NAudio" Version="2.2.1" />
+		<PackageReference Include="NAudio.Vorbis" Version="1.5.0" />
+		<PackageReference Include="Raylib-cs" Version="8.0.0" />
+		<PackageReference Include="MoonSharp" Version="2.0.0" />
+		<PackageReference Include="SkiaSharp" Version="3.116.1" />
+		<PackageReference Include="SkiaSharp.Skottie" Version="3.116.1" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="3.116.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="Lumen\**" Exclude="Lumen\**\*.zip">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>Lumen\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</None>
+		<None Include="Don\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+
+		<None Include="font\**">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+
+		<None Include="runtimes\**\*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="TaikoStormIcon3.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include=".github\agents\Qwen3.8.agent.md" />
+	</ItemGroup>
+
+</Project>

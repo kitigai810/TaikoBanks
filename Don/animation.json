@@ -1,0 +1,634 @@
+[
+  {
+    "id": 0,
+    "type": "move",
+    "duration": 266,
+    "total_distance": 816,
+    "ease_in": "cubic",
+    "lock_input": true,
+    "comment": "rainbow transition up"
+  },
+  {
+    "id": 1,
+    "type": "move",
+    "duration": 300,
+    "total_distance": {
+      "reference_id": 0,
+      "property": "total_distance"
+    },
+    "ease_in": "cubic",
+    "ease_out": "exponential",
+    "comment": "chara left/right up"
+  },
+  {
+    "id": 2,
+    "type": "move",
+    "duration": 33,
+    "total_distance": 30,
+    "delay": {
+      "reference_id": 1,
+      "property": "duration"
+    },
+    "comment": "chara left/right down"
+  },
+  {
+    "id": 3,
+    "type": "fade",
+    "duration": {
+      "reference_id": 0,
+      "property": "duration"
+    },
+    "initial_opacity": 0.0,
+    "final_opacity": 1.0,
+    "delay": {
+      "init_val": {
+        "reference_id": 0,
+        "property": "duration"
+      },
+      "reference_id": 0,
+      "property": "duration"
+    },
+    "lock_input": true,
+    "comment": "song text fade in"
+  },
+  {
+    "id": 4,
+    "type": "fade",
+    "duration": 133,
+    "comment": "song text fade out"
+  },
+  {
+    "id": 5,
+    "type": "move",
+    "duration": 983.33,
+    "total_distance": 360,
+    "ease_out": "quadratic",
+    "comment": "result shutter move in"
+  },
+  {
+    "id": 6,
+    "type": "fade",
+    "duration": 500,
+    "initial_opacity": 0.0,
+    "final_opacity": 1.0,
+    "loop": true,
+    "delay": 500,
+    "reverse_delay": 0,
+    "comment": "indicator skip drum don fade in/out"
+  },
+  {
+    "id": 7,
+    "type": "move",
+    "duration": 1000,
+    "total_distance": 15,
+    "loop": true,
+    "comment": "indicator blue arrow move out"
+  },
+  {
+    "id": 8,
+    "type": "fade",
+    "duration": 1000,
+    "loop": true,
+    "comment": "indicator blue arrow fade in/out"
+  },
+  {
+    "id": 9,
+    "type": "texture_resize",
+    "duration": 333,
+    "initial_size": 1.0,
+    "final_size": 1.5,
+    "reverse_delay": 0,
+    "ease_out": "quadratic",
+    "comment": "timer counter pop in/out"
+  },
+  {
+    "id": 10,
+    "type": "texture_resize",
+    "duration": 200,
+    "initial_size": 1.0,
+    "final_size": 1.5,
+    "comment": "timer highlight pop out"
+  },
+  {
+    "id": 11,
+    "type": "fade",
+    "duration": 200,
+    "comment": "timer highlight fade out"
+  },
+  {
+    "id": 12,
+    "type": "texture_change",
+    "duration": 300,
+    "textures": [
+      [0.0, 50, 0],
+      [50, 100, 1],
+      [100, 150, 2],
+      [150, 200, 3],
+      [200, 250, 4],
+      [250, 300, 5]
+    ],
+    "loop": true,
+    "comment": "rainbow nameplate animation"
+  },
+  {
+    "id": 13,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 400, 11],
+      [400, 840, 10],
+      [840, 1000, 11]
+    ],
+    "comment": "don_balloon_failure face"
+  },
+  {
+    "id": 14,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_balloon_loop face"
+  },
+  {
+    "id": 15,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_balloon_nobeat face"
+  },
+  {
+    "id": 16,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 93.75, 7],
+      [93.75, 1000, 6]
+    ],
+    "comment": "don_balloon_success face"
+  },
+  {
+    "id": 17,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 200, 4],
+      [200, 355.56, 7],
+      [355.56, 1000, 0]
+    ],
+    "comment": "don_combo face"
+  },
+  {
+    "id": 18,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 1000, 4],
+      [1000, 1000, 0]
+    ],
+    "comment": "don_entry1P_select face"
+  },
+  {
+    "id": 19,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_entry1P_select_loop face"
+  },
+  {
+    "id": 20,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 1000, 4],
+      [1000, 1000, 0]
+    ],
+    "comment": "don_entry2P_select face"
+  },
+  {
+    "id": 21,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_entry2P_select_loop face"
+  },
+  {
+    "id": 22,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_entry_in face"
+  },
+  {
+    "id": 23,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_full_combo face"
+  },
+  {
+    "id": 24,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 112.68, 0],
+      [112.68, 225.35, 7],
+      [225.35, 704.23, 4],
+      [704.23, 1000, 0]
+    ],
+    "comment": "don_full_gage face"
+  },
+  {
+    "id": 25,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 771.43, 4],
+      [771.43, 1000, 2]
+    ],
+    "comment": "don_general1P_item_in face"
+  },
+  {
+    "id": 26,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_general1P_item_loop face"
+  },
+  {
+    "id": 27,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 500, 2],
+      [500, 1000, 4]
+    ],
+    "comment": "don_general1P_item_out face"
+  },
+  {
+    "id": 28,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 520, 10],
+      [520, 1000, 8]
+    ],
+    "comment": "don_kusu1P_failure face"
+  },
+  {
+    "id": 29,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_kusu1P_in face"
+  },
+  {
+    "id": 30,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_kusu1P_loop face"
+  },
+  {
+    "id": 31,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_kusu1P_nobeat face"
+  },
+  {
+    "id": 32,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_kusu1P_success01 face"
+  },
+  {
+    "id": 33,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_kusu1P_success02 face"
+  },
+  {
+    "id": 34,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 520, 9],
+      [520, 1000, 8]
+    ],
+    "comment": "don_kusu2P_failure face"
+  },
+  {
+    "id": 35,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_kusu2P_in face"
+  },
+  {
+    "id": 36,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_kusu2P_loop face"
+  },
+  {
+    "id": 37,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_kusu2P_nobeat face"
+  },
+  {
+    "id": 38,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_kusu2P_success01 face"
+  },
+  {
+    "id": 39,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_kusu2P_success02 face"
+  },
+  {
+    "id": 40,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 333.33, 10],
+      [333.33, 833.33, 11],
+      [833.33, 1000, 10]
+    ],
+    "comment": "don_miss face"
+  },
+  {
+    "id": 41,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_miss6 face"
+  },
+  {
+    "id": 42,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 266.67, 4],
+      [266.67, 1000, 0]
+    ],
+    "comment": "don_miss_normal face"
+  },
+  {
+    "id": 43,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 488.89, 7],
+      [488.89, 1000, 8]
+    ],
+    "comment": "don_norm_down face"
+  },
+  {
+    "id": 44,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 200, 4],
+      [200, 400, 0],
+      [400, 700, 4],
+      [700, 900, 0],
+      [900, 1000, 4]
+    ],
+    "loop": true,
+    "comment": "don_norm_loop face"
+  },
+  {
+    "id": 45,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 200, 4],
+      [200, 333.33, 7],
+      [333.33, 1000, 0]
+    ],
+    "comment": "don_norm_up face"
+  },
+  {
+    "id": 46,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 650, 4],
+      [650, 816.67, 0],
+      [816.67, 966.67, 7],
+      [966.67, 1000, 4]
+    ],
+    "loop": true,
+    "comment": "don_normal face"
+  },
+  {
+    "id": 47,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 533.33, 4],
+      [533.33, 1000, 9]
+    ],
+    "comment": "don_result2P_failure face"
+  },
+  {
+    "id": 48,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_result2P_failure_loop face"
+  },
+  {
+    "id": 49,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 225, 4],
+      [225, 375, 7],
+      [375, 875, 2],
+      [875, 1000, 4]
+    ],
+    "comment": "don_result_clear face"
+  },
+  {
+    "id": 50,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 81.97, 4],
+      [81.97, 393.44, 0],
+      [393.44, 573.77, 4],
+      [573.77, 885.25, 0],
+      [885.25, 1000, 4]
+    ],
+    "loop": true,
+    "comment": "don_result_clear_loop face"
+  },
+  {
+    "id": 51,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 533.33, 4],
+      [533.33, 1000, 10]
+    ],
+    "comment": "don_result_failure face"
+  },
+  {
+    "id": 52,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_result_failure_loop face"
+  },
+  {
+    "id": 53,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_result_full_loop face"
+  },
+  {
+    "id": 54,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "comment": "don_result_in face"
+  },
+  {
+    "id": 55,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_result_loop face"
+  },
+  {
+    "id": 56,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 500, 4],
+      [500, 1000, 8]
+    ],
+    "comment": "don_result_percious face"
+  },
+  {
+    "id": 57,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_result_percious_loop face"
+  },
+  {
+    "id": 58,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 312.5, 0],
+      [312.5, 375, 4],
+      [375, 812.5, 0],
+      [812.5, 875, 4],
+      [875, 1000, 0]
+    ],
+    "loop": true,
+    "comment": "don_sabi face"
+  },
+  {
+    "id": 59,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 145.45, 0],
+      [145.45, 290.91, 7],
+      [290.91, 818.18, 4],
+      [818.18, 1000, 0]
+    ],
+    "comment": "don_sabi_start face"
+  },
+  {
+    "id": 60,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 240, 4],
+      [240, 760, 7],
+      [760, 1000, 0]
+    ],
+    "comment": "don_select1P_out face"
+  },
+  {
+    "id": 61,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 240, 4],
+      [240, 760, 7],
+      [760, 1000, 0]
+    ],
+    "comment": "don_select2P_out face"
+  },
+  {
+    "id": 62,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_select_loop face"
+  },
+  {
+    "id": 63,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [
+      [0, 66.67, 7],
+      [66.67, 791.67, 4],
+      [791.67, 916.67, 0],
+      [916.67, 1000, 7]
+    ],
+    "comment": "don_swing02 face"
+  },
+  {
+    "id": 64,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_wait2P_loop face"
+  },
+  {
+    "id": 65,
+    "type": "texture_change",
+    "duration": 1000,
+    "textures": [[0, 1000, 0]],
+    "loop": true,
+    "comment": "don_wait_loop face"
+  },
+  {
+    "id": 66,
+    "type": "texture_resize",
+    "duration": 70,
+    "initial_size": 1.0,
+    "final_size": 0.95,
+    "reverse_delay": 0,
+    "ease_out": "quadratic"
+  }
+]
