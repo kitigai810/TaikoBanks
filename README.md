@@ -1,1 +1,4 @@
-# TaikoStorm
+# TaikoBank
+
+ゴミシミュレーター誰も何もいじるなカス
+

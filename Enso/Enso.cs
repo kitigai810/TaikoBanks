@@ -157,6 +157,9 @@ public static class Enso
 
     public static bool DanMode = false;
     public static bool DanFirstSong = true;
+    // 💡 段位道場:このあと続けて次の曲があるかどうか。true の間は、曲終了時にEnsoが自前で行う
+    //    暗転(黒フェード)を止める。曲間の切り替え演出はProgram.cs側のDanCurtain(衝立)が担当するため。
+    public static bool DanHasNextSong = false;
     public static int DanSongIndex = 0;
     public static int DanTotalNotes = 0;
 
@@ -273,7 +276,7 @@ public static class Enso
     {
         double nowSec = _nowTime / 1_000_000.0;
         double bpm = 0.0;
-        double scroll = 1.0;
+        double scroll = 1;
         int bar = 0;
         int totalBars = 0;
 
@@ -1553,6 +1556,11 @@ public static class Enso
 
         DrawHUD(vx, vy, vw, vh, s);
 
+        // 💡 段位道場の曲間演出(DanCurtain=ふすま)は、ミニ太鼓関連の一式より背面に描画する。
+        //    DanCurtainの状態はRaylib.GetTime()(実時間)基準で進んでいるため、
+        //    ここでもEnsoの譜面内時刻(nowSec)ではなくRaylib.GetTime()を渡す。
+        DanCurtain.Draw(vx, vy, s, Raylib.GetTime());
+
         MiniTaiko.DrawHaikei(vx, vy, s);
         if (IsP2Active) MiniTaiko.DrawHaikeiP2(vx, vy, s, EnsoP2.LANE_Y);
         MiniTaiko.DrawDanGauge(vx, vy, s);
@@ -1604,7 +1612,7 @@ public static class Enso
 
         //EnsoGayLane.Draw(vx, vy, s);
 
-        if (_endSequenceStartWall >= 0)
+        if (_endSequenceStartWall >= 0 && !DanHasNextSong)
         {
             float t = (float)((Now() - _endSequenceStartWall) / END_FADE_SEC);
             byte a = (byte)(Math.Clamp(t, 0f, 1f) * 255f);
@@ -1924,9 +1932,17 @@ public static class Enso
         const float TITLE_RIGHT_EXTRA_MARGIN = -75f;
         float titleOutline = TITLE_OUTLINE_THICKNESS * (fontSize / 64f) + TITLE_RIGHT_EXTRA_MARGIN * s;
 
-        float titleX = exactTitleWidth <= TITLE_BOX_WIDTH * s
-            ? TITLE_CENTER_X * s + vx - exactTitleWidth / 2f
-            : TITLE_BOX_RIGHT * s + vx - exactTitleWidth - titleOutline;
+        bool isAllHalfWidth = true;
+        foreach (char c in title)
+        {
+            if (c > 0x7F) { isAllHalfWidth = false; break; }
+        }
+        int titleAlignThreshold = isAllHalfWidth ? 12 : 6;
+        bool titleRightAlign = title.Length >= titleAlignThreshold;
+
+        float titleX = titleRightAlign
+            ? TITLE_BOX_RIGHT * s + vx - exactTitleWidth - titleOutline
+            : TITLE_CENTER_X * s + vx - exactTitleWidth / 2f;
 
         float titleY = 38f * s + vy;
 
@@ -2363,7 +2379,7 @@ public static class Enso
         if (bpmFix > 0)
         {
             bpm = bpmFix;
-            scroll = 1.0;
+            scroll = 1.1;
         }
 
         double speed = (LANE_RIGHT - HitX) * bpm / 240.0;

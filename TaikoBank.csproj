@@ -7,7 +7,7 @@
 		<Nullable>enable</Nullable>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<ApplicationIcon>TaikoStormIcon3.ico</ApplicationIcon>
+		<ApplicationIcon>TaikoBank.ico</ApplicationIcon>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -43,7 +43,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Content Include="TaikoStormIcon3.ico" />
+	  <Content Include="TaikoBank.ico" />
 	</ItemGroup>
 
 	<ItemGroup>

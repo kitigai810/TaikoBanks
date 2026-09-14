@@ -94,6 +94,16 @@ public partial class Program
     static List<string> _danSongTitles = new();          // 💡 DanResultScene表示用(確定時にDanSelectSceneからコピー)
     static List<Exam.Condition> _danConditions = new();  // 💡 DanResultScene判定用(確定時にDanSelectSceneからコピー)
     static Exam.ConditionGauge _danGauge;                 // 💡 魂ゲージ条件バー(Result.cs)用の合格閾値(conditionGauge)
+
+    // 💡 段位道場:曲間の衝立(DanCurtain)演出中かどうか。true の間もEnso.Update()は動かし続け
+    //    (どんちゃん・ダンサー等の背景演出はそのまま)、曲切り替え(StartDanSong)だけを
+    //    衝立が閉じきった瞬間(onCovered)に行う。
+    static bool _danCurtainActive;
+    // 💡 段位道場:ふすまが物理的に開き切ってから何秒待ってEnso.Start()(譜面が流れ始める)するか。
+    const double DAN_CURTAIN_POST_OPEN_WAIT_SEC = 2.0;
+    // true の間、_danPendingStartAtSec(Raylib.GetTime()基準)に達したらEnso.Start()を呼ぶ。
+    static bool _danPendingStart;
+    static double _danPendingStartAtSec;
     static List<Exam.SongResult> _danSongResults = new(); // 💡 1曲終わるごとに追加していく各曲の成績
 
     // Title→SongSelect遷移時のフェードイン(黒→通常)用タイマー
@@ -853,6 +863,10 @@ public partial class Program
                         _danSongResults = new List<Exam.SongResult>();
                         _danSongIndex = 0;
                         _isDanMode = true;
+                        _danCurtainActive = false;
+                        _danPendingStart = false;
+                        Enso.SuppressNotesDraw = false;
+                        DanCurtain.Init();
 
                         StartDanSong();
                     }
@@ -1040,10 +1054,29 @@ public partial class Program
                 }
                 else if (_scene == Scene.Playing)
                 {
+                    // 💡 段位道場:曲間の衝立(DanCurtain)演出中もEnso.Update()は止めない。
+                    //    どんちゃん・ダンサー等の背景演出はそのまま動き続けさせ、
+                    //    曲の切り替え(StartDanSong)だけを衝立が閉じきった瞬間(onCovered)に行う。
                     Enso.Update();
                     NotesTexture.Update();
+                    // 💡 DanCurtainの状態遷移(onCovered発火含む)はここで進める。
+                    //    描画(Enso.Draw()内のDanCurtain.Draw())では状態を変更しない。
+                    DanCurtain.Update(Raylib.GetTime());
 
-                    if (Raylib.IsKeyPressed(KeyboardKey.F2))
+                    if (_danPendingStart && Raylib.GetTime() >= _danPendingStartAtSec)
+                    {
+                        _danPendingStart = false;
+                        Enso.SuppressNotesDraw = false;
+                        Enso.Start();
+                    }
+
+                    if (_danCurtainActive && !DanCurtain.IsPlaying) _danCurtainActive = false;
+
+                    if (_danCurtainActive)
+                    {
+                        // カーテン演出中はデバッグリトライ/中断キー以外は無視する
+                    }
+                    else if (Raylib.IsKeyPressed(KeyboardKey.F2))
                     {
                         // 💡 デバッグ用: 一からやり直し(スコア/コンボ/譜面位置を含め完全リセットして再スタート)
                         // Stop()で入力受付・再生を止めてからInit()する(積み残しの入力キューや
@@ -1058,6 +1091,10 @@ public partial class Program
                         Enso.Stop();
                         _isDanMode = false;
                         Enso.DanMode = false;
+                        _danCurtainActive = false;
+                        _danPendingStart = false;
+                        Enso.SuppressNotesDraw = false;
+                        DanCurtain.Unload();
                         SongLoadScreen.Dispose();
                         _scene = Scene.SongSelect;
                         SongSelectScene.ResumeMenuBgm();
@@ -1072,6 +1109,8 @@ public partial class Program
                             // 💡 段位モードはSongLoadScreenを経由していないためDispose()は不要
                             _isDanMode = false;
                             Enso.DanMode = false;
+                            _danCurtainActive = false;
+                            DanCurtain.Unload();
                             DanSelectScene.Enter();
                             _scene = Scene.DanSelect;
                             DiscordRpc.SetSongSelect();
@@ -1096,10 +1135,28 @@ public partial class Program
 
                         if (_isDanMode && _danSongIndex + 1 < _danSongPaths.Count)
                         {
-                            // 💡 段位モード:まだ次の曲が残っていれば、結果画面を挟まず続けて演奏する
-                            //    (SongLoadScreenは経由していないためDispose()は不要)
-                            _danSongIndex++;
-                            StartDanSong();
+                            // 💡 段位モード:まだ次の曲が残っていれば、結果画面を挟まず
+                            //    DanCurtain(衝立)演出を挟んで次の曲へ続ける。背景の演奏画面は止めず動かしたまま、
+                            //    実際の曲切り替え(StartDanSong)は衝立が閉じきった瞬間(onCovered)に行うため、
+                            //    切り替わりの一瞬は画面に映らない。
+                            int nextIndex = _danSongIndex + 1;
+                            string nextTitle = _danSongTitles.Count > nextIndex ? _danSongTitles[nextIndex] : _danTitle;
+
+                            _danCurtainActive = true;
+                            double showAtSec = Raylib.GetTime();
+                            DanCurtain.Show(showAtSec, nextTitle, null, onCovered: () =>
+                            {
+                                _danSongIndex = nextIndex;
+                                // 💡 ふすまが閉じている間に読み込みだけ済ませる(Enso.Start()はまだ呼ばない)。
+                                //    Init()直後はnowSecが0で止まったままなので、SuppressNotesDrawを立てて
+                                //    「先頭の音符が判定ラインに静止して見える」誤表示を隠しておく。
+                                Enso.SuppressNotesDraw = true;
+                                StartDanSong(autoStart: false);
+                            });
+
+                            // 💡 ふすまが物理的に開き切ってから2秒後に譜面(Enso.Start())を流し始める。
+                            _danPendingStart = true;
+                            _danPendingStartAtSec = showAtSec + DanCurtain.DoorsOpenAtSec + DAN_CURTAIN_POST_OPEN_WAIT_SEC;
                         }
                         else if (_isDanMode)
                         {
@@ -1117,7 +1174,7 @@ public partial class Program
 
                     Raylib.BeginTextureMode(_virtualScreen);
                     Raylib.ClearBackground(Color.Black);
-                    Enso.Draw();
+                    Enso.Draw(); // 💡 DanCurtainの描画はEnso.Draw()内部(ミニ太鼓関連の背面)で行われる(状態は変更しない)
                     SettingsPanel.Draw();
                     DrawScreenBars();
                     DrawDebugOverlay();
@@ -1169,6 +1226,10 @@ public partial class Program
                         // 💡 段位モードは全曲(1~3曲)の演奏後、専用リザルト確認を経て段位選択画面へ戻る
                         _isDanMode = false;
                         Enso.DanMode = false;
+                        _danCurtainActive = false;
+                        _danPendingStart = false;
+                        Enso.SuppressNotesDraw = false;
+                        DanCurtain.Unload();
                         DanSelectScene.Enter();
                         _scene = Scene.DanSelect;
                         DiscordRpc.SetSongSelect();
@@ -1225,8 +1286,11 @@ public partial class Program
     /// <summary>
     /// 段位道場モード:_danSongIndex番目の曲を読み込み、SongLoadScreen(曲読み込み演出)を経由せず
     /// 即座に演奏を開始する(Scene.Playingへ直接遷移)。
+    /// autoStart=false の場合、TJA読み込み・Enso.Init()までは行うが Enso.Start()は呼ばない
+    /// (ふすまが閉じている間に読み込みだけ済ませ、開き切ってからしばらく待って
+    ///  Start()するケース向け。呼び出し側が別途Enso.Start()すること)。
     /// </summary>
-    static void StartDanSong()
+    static void StartDanSong(bool autoStart = true)
     {
         string tjaPath = _danSongPaths[_danSongIndex];
         var course = _danSongCourses[_danSongIndex];
@@ -1239,11 +1303,12 @@ public partial class Program
         Enso.DanMode = true;
         Enso.SetP2Active(false);
         Enso.DanFirstSong = (_danSongIndex == 0);
+        Enso.DanHasNextSong = (_danSongIndex + 1 < _danSongPaths.Count);
         Enso.DanTotalNotes = _danTotalNotes;
 
         SongSelectScene.PauseMenuBgm();
         Enso.Init();
-        Enso.Start();
+        if (autoStart) Enso.Start();
 
         _ensoStarted = true;
         _scene = Scene.Playing;

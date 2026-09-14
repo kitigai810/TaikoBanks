@@ -751,9 +751,9 @@ public static class ResultScene
 
         float PANEL_X = 0f;
         float PANEL_Y = 0f;
-        float SCORE_X = 440f;
+        float SCORE_X = 475f;
         float SCORE_Y = 315f;
-        float SCORE_SIZE = 75f;
+        float SCORE_SIZE = 80f;
         float NUM_X = 875f;
         float NUM_Y_START = 275;
         float NUM_Y_GAP = -92f;
