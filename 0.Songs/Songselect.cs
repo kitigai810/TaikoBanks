@@ -74,12 +74,29 @@ public static class SongSelectScene
     public static float BestIconGrowDuration = 0.1f;  // フォルダ/曲を選択してから、非選択時→選択時の大きさ・位置へ変化するのにかかる時間（秒）
 
     // ==================================================================
-    // 💡 選択中バーに重ねて表示する Selected.png の表示調整用パラメータ
+    // 💡 選択中バーに重ねて表示する Bar_Select.png の表示調整用パラメータ
     // ==================================================================
-    private static float _selectedWidthScale = 1.075f;   // 全体の横幅倍率
-    private static float _selectedHeightScale = 1.275f;   // 縦幅倍率（Y方向だけ個別調整可能）
+    private static float _selectedWidthScale = 1.125f;   // 全体の横幅倍率（Bar_Select移行に伴い、バーより横に大きくなりすぎないよう縮小）
+    private static float _selectedHeightScale = 1.25f;   // 縦幅倍率（Y方向だけ個別調整可能）
     private static float _selectedOffsetX = 0f;         // 横方向オフセット
     private static float _selectedOffsetY = 0f;         // 縦方向オフセット
+
+    // ==================================================================
+    // 💡 Bar_Select.png（TJAPlayer-Nijiiro の SongSelect_Bar_Select を移植）
+    //    「点滅ストロボ → 常時呼吸フェード」のアニメーション状態管理
+    //    画像は縦3分割のスプライトシート想定（TaikoBank独自に新規追加するアセット）：
+    //      区画0(y: 0        〜 H/3  ) = 成長レイヤー用
+    //      区画1(y: H/3      〜 2H/3 ) = 呼吸レイヤー用
+    //      区画2(y: 2H/3     〜 H    ) = ストロボレイヤー用
+    //    各区画はさらに縦4等分し、上端キャップ=1/4・伸縮中央=2/4・下端キャップ=1/4として使用する
+    //    （Nijiiro側の barSelect_height = Height/3, height = barSelect_height/4 と同じ考え方）
+    // ==================================================================
+    const float BAR_FLASH_DURATION_MS = 2700f;   // Nijiiro ctBarFlash と同じ総尺(ms)
+    const float SELECT_FADE_LOOP_MS = 1000f;     // 呼吸フェードの1周期(ms)
+
+    static float _barFlashElapsedMs = BAR_FLASH_DURATION_MS; // 起動直後は「点滅済み＝呼吸フェードのみ」扱い
+    static bool _barFlashActive = false;                     // true の間は0→2700msをカウントしてストロボ演出中
+    static float _selectFadeElapsedMs = 0f;                  // 呼吸フェード用ループタイマー(0〜1000msを繰り返す)
 
     // ==================================================================
     // 💡 オーバーレイ画像（Overlay.png）の表示・アニメーション調整用パラメータ
@@ -460,8 +477,10 @@ public static class SongSelectScene
         _texOverlay = Raylib.LoadTexture(Path.Combine(_skinRoot, "0.Songs", "Overlay.png"));
         _overlayLoaded = _texOverlay.Id != 0;
 
-        _texSelected = Raylib.LoadTexture(Path.Combine(_skinRoot, "0.Songs", "Selected.png"));
-        _selectedLoaded = _texSelected.Id != 0;
+        // 💡 TJAPlayer-Nijiiro の Bar_Select.png 相当（縦3分割スプライトシート）。
+        //    未用意の場合は _barSelectLoaded=false のままとなり、ハイライト演出は描画されない。
+        _texBarSelect = Raylib.LoadTexture(Path.Combine(_skinRoot, "0.Songs", "Bar_Select.png"));
+        _barSelectLoaded = _texBarSelect.Id != 0 && _texBarSelect.Height >= 12; // 最低でも3区画×4分割=12px相当は必要
 
         for (int i = 0; i < 5; i++)
         {
@@ -605,7 +624,7 @@ public static class SongSelectScene
         if (_footerAnimLoaded) Raylib.UnloadTexture(_texFooteranim);
         if (_starLoaded) Raylib.UnloadTexture(_texStar);
         if (_overlayLoaded) { Raylib.UnloadTexture(_texOverlay); _overlayLoaded = false; }
-        if (_selectedLoaded) { Raylib.UnloadTexture(_texSelected); _selectedLoaded = false; }
+        if (_barSelectLoaded) { Raylib.UnloadTexture(_texBarSelect); _barSelectLoaded = false; }
 
         for (int i = 0; i < 5; i++) if (_diffBarsLoaded[i]) Raylib.UnloadTexture(_texDiffBars[i]);
         if (_difficultyPanelLoaded) Raylib.UnloadTexture(_texDifficultyPanel);
@@ -802,8 +821,8 @@ public static class SongSelectScene
     static Texture2D _texOverlay;
     static bool _overlayLoaded = false;
 
-    static Texture2D _texSelected;
-    static bool _selectedLoaded = false;
+    static Texture2D _texBarSelect;
+    static bool _barSelectLoaded = false;
 
     static Texture2D _texFooter, _texFooteranim, _texStar;
     static bool _footerLoaded = false, _footerAnimLoaded = false, _starLoaded = false;
@@ -2464,6 +2483,7 @@ public static class SongSelectScene
         _boxCloseTimer = 0f;
         _boxCloseExitDone = false;
         _boxOpenTimer = 0f; // 閉じるときも散開演出を再生する
+        StartBarSelectFlash(); // 💡 Nijiiro同様、フォルダを閉じる瞬間にもストロボ演出を再生する
         PlayDonSound();
     }
 
@@ -2524,8 +2544,131 @@ public static class SongSelectScene
 #endif
     }
 
+    /// <summary>
+    /// 選択ハイライト(Bar_Select.png)の「点滅ストロボ→常時呼吸フェード」演出を開始する。
+    /// Nijiiro側の ctBarFlash.Start(0, 2700, ...) に相当。フォルダを開く/閉じるタイミングで呼び出す。
+    /// </summary>
+    static void StartBarSelectFlash()
+    {
+        _barFlashElapsedMs = 0f;
+        _barFlashActive = true;
+        _selectFadeElapsedMs = 0f;
+    }
+
+    /// <summary>毎フレーム呼び出す、選択ハイライトのタイマー更新（フォルダ開閉中も含め常に進行させる）。</summary>
+    static void UpdateBarSelectAnimation()
+    {
+        float dtMs = Raylib.GetFrameTime() * 1000f;
+
+        if (_barFlashActive)
+        {
+            _barFlashElapsedMs += dtMs;
+            if (_barFlashElapsedMs >= BAR_FLASH_DURATION_MS)
+            {
+                _barFlashElapsedMs = BAR_FLASH_DURATION_MS;
+                _barFlashActive = false; // 点滅シーケンス終了 → 以後は常時呼吸フェードへ切り替わる
+            }
+        }
+
+        // 呼吸フェードは「点滅が終わった後」だけ進行させる（Nijiiroの ctSelectFadeAnime.TickLoop() 開始条件と同じ）
+        if (!_barFlashActive)
+        {
+            _selectFadeElapsedMs += dtMs;
+            if (_selectFadeElapsedMs >= SELECT_FADE_LOOP_MS) _selectFadeElapsedMs -= SELECT_FADE_LOOP_MS;
+        }
+    }
+
+    /// <summary>
+    /// 「成長」レイヤーの不透明度。点滅中は0〜700msでフル表示、700〜1000msでフェードアウトし、
+    /// 点滅終了後は箱の展開進捗(focusEnvelope)にそのまま追従する（Nijiiroの ctBarFlash.IsEnded分岐に相当）。
+    /// </summary>
+    static byte GetGrowingLayerOpacity(float focusEnvelope01)
+    {
+        if (!_barFlashActive)
+            return (byte)Math.Clamp(focusEnvelope01 * 255f, 0f, 255f);
+
+        float raw = 255f - (_barFlashElapsedMs - 700f) * 2.55f;
+        return (byte)Math.Clamp(raw, 0f, 255f);
+    }
+
+    /// <summary>
+    /// 「呼吸」レイヤーの不透明度。点滅終了後、300ms fade-in→400ms保持→300ms fade-outを1000msループで繰り返す。
+    /// 点滅中は成長レイヤーと同じ値を共有する（Nijiiro実装の踏襲）。
+    /// </summary>
+    static byte GetBreathingLayerOpacity(float focusEnvelope01)
+    {
+        if (_barFlashActive) return GetGrowingLayerOpacity(focusEnvelope01);
+
+        float t = _selectFadeElapsedMs;
+        float env = t <= 300f ? t / 300f
+                  : t <= 700f ? 1f
+                  : 1f - (t - 700f) / 300f;
+        return (byte)Math.Clamp(focusEnvelope01 * env * 255f, 0f, 255f);
+    }
+
+    /// <summary>
+    /// フォルダを開閉した瞬間だけ入る、8段階の素早いストロボ点滅（0〜800msのみ有効）。
+    /// Nijiiroの [ BarFlash ] リージョンと同じ三角波パターン。
+    /// </summary>
+    static byte GetFlashStrobeOpacity()
+    {
+        if (!_barFlashActive) return 0;
+        float v = _barFlashElapsedMs;
+        if (v > 800f) return 0;
+
+        float raw =
+            v <= 100f ? v * 2.55f :
+            v <= 200f ? 255f - (v - 100f) * 2.55f :
+            v <= 300f ? (v - 200f) * 2.55f :
+            v <= 400f ? 255f - (v - 300f) * 2.55f :
+            v <= 500f ? (v - 400f) * 2.55f :
+            v <= 600f ? 255f - (v - 500f) * 2.55f :
+            v <= 700f ? (v - 600f) * 2.55f :
+                         255f - (v - 700f) * 2.55f;
+        return (byte)Math.Clamp(raw, 0f, 255f);
+    }
+
+    /// <summary>
+    /// Bar_Select.png の指定区画(segIndex: 0=成長, 1=呼吸, 2=ストロボ)を
+    /// 上端キャップ/伸縮中央/下端キャップの3枚に分けて描画する（角が歪まないようにするため）。
+    /// </summary>
+    static void DrawBarSelectSlice(int segIndex, float centerX, float centerY, float destW, float destH, Color tint)
+    {
+        if (!_barSelectLoaded || tint.A == 0 || destW <= 0f || destH <= 0f) return;
+
+        int segH = _texBarSelect.Height / 3;
+        int capH = Math.Max(1, segH / 4);
+        int segY = segIndex * segH;
+
+        // 💡 selWが横に大きく伸びた場合でもキャップが肥大化しすぎないようスケールを頭打ちにする
+        //    （キャップが伸びすぎると中央の伸縮部分が潰れ、上下のキャップだけが離れた位置に見えてしまうため）
+        float scale = Math.Min(1.5f, destW / _texBarSelect.Width);
+        float capDrawH = Math.Min(destH * 0.3f, capH * scale);
+        float midDrawH = Math.Max(0f, destH - capDrawH * 2f);
+
+        // 下端キャップ（画像側の下端＝角丸コーナー部分を使用）
+        var srcBottom = new Rectangle(0, segY + capH * 3, _texBarSelect.Width, capH);
+        var destBottom = new Rectangle(centerX, centerY + destH / 2f, destW, capDrawH);
+        Raylib.DrawTexturePro(_texBarSelect, srcBottom, destBottom, new Vector2(destW / 2f, capDrawH), 0f, tint);
+
+        // 伸縮する中央部分（センターバーの高さ変化に追従してここだけY方向に伸縮する）
+        if (midDrawH > 0f)
+        {
+            var srcMid = new Rectangle(0, segY + capH, _texBarSelect.Width, capH);
+            var destMid = new Rectangle(centerX, centerY, destW, midDrawH);
+            Raylib.DrawTexturePro(_texBarSelect, srcMid, destMid, new Vector2(destW / 2f, midDrawH / 2f), 0f, tint);
+        }
+
+        // 上端キャップ（画像側の上端＝角丸コーナー部分を使用）
+        var srcTop = new Rectangle(0, segY, _texBarSelect.Width, capH);
+        var destTop = new Rectangle(centerX, centerY - destH / 2f, destW, capDrawH);
+        Raylib.DrawTexturePro(_texBarSelect, srcTop, destTop, new Vector2(destW / 2f, 0f), 0f, tint);
+    }
+
     static void UpdateSongSelect()
     {
+        UpdateBarSelectAnimation(); // 💡 フォルダ開閉中も含め、ハイライト演出タイマーは常に進行させる
+
         ApplyPendingSearch(); // 設定画面の曲検索ジャンプを反映（テキスト部分一致）
         ApplyPendingSearchPath(); // 設定画面の検索候補選択によるジャンプを反映（TjaPath直接指定）
         DonChanScene.Update("don_result_clear_loop");
@@ -2667,6 +2810,7 @@ public static class SongSelectScene
                 _boxTransitionEntry = boxEntry;
                 _boxTransitionSwitched = false;
                 _boxOpenTimer = 0f;
+                StartBarSelectFlash(); // 💡 Nijiiro同様、フォルダを開く瞬間にストロボ演出を再生する
                 DonChanScene.PlayOneShot("don_full_combo");
             }
             else if (entry is ReturnEntry)
@@ -2997,34 +3141,31 @@ public static class SongSelectScene
             // 💡 Box(ジャンル)決定演出中、またはフォルダを閉じる演出中は、選択中バーの描画全体を
             //    このバーの中心を軸にXスケールだけ変換してまとめて縮小/復元する
             // 参照側は中央バーを横方向に潰さず、周囲のバーだけを開閉させる。
-            if (_selectedLoaded && (visualCurrent || outgoingDuringScroll) && selBarAnimFinished)
+            if (_barSelectLoaded && (visualCurrent || outgoingDuringScroll) && selBarAnimFinished)
             {
+                // 💡 Nijiiroの BarAnimeCount 相当（このバーへのフォーカス/箱展開の進み具合、0〜1）
                 float selectedFocusProgress = visualCurrent ? 1f : outgoingProgress;
+                float focusEnvelope = boxContentOpacity * selectedFocusProgress;
+
                 float selW = barW * _selectedWidthScale
                     * (visualCurrent ? boxCenterHorizontalScale : 1f);
                 float selH = barTotalH * _selectedHeightScale;
                 float selOffX = _selectedOffsetX * scaleFactor;
                 float selOffY = _selectedOffsetY * scaleFactor;
+                float destCenterX = slotCenterX + selOffX;
+                float destCenterY = iy + selOffY;
 
-                byte selAlphaVal = (byte)(boxContentOpacity * selectedFocusProgress * 255f);
-                Color selectedColor = new Color((byte)255, (byte)255, (byte)255, selAlphaVal);
+                // レイヤー1: 箱展開に追従する「成長」ハイライト（点滅シーケンス中は0.7〜1.0秒でフェードアウト）
+                byte growA = GetGrowingLayerOpacity(focusEnvelope);
+                DrawBarSelectSlice(0, destCenterX, destCenterY, selW, selH, new Color((byte)255, (byte)255, (byte)255, growA));
 
-                Rectangle srcSelected = new Rectangle(0, 0, _texSelected.Width, _texSelected.Height);
-                Rectangle destSelected = new Rectangle(slotCenterX + selOffX, iy + selOffY, selW, selH);
+                // レイヤー2: 点滅終了後、常時ゆっくり明滅を繰り返す「呼吸」ハイライト
+                byte breatheA = GetBreathingLayerOpacity(focusEnvelope);
+                DrawBarSelectSlice(1, destCenterX, destCenterY, selW, selH, new Color((byte)255, (byte)255, (byte)255, breatheA));
 
-                // 💡 角の丸みが引き伸ばしで歪まないよう、9パッチ描画を使用
-                int selectedBorder = (int)(Math.Min(_texSelected.Width, _texSelected.Height) * 0.25f);
-                NPatchInfo selectedNPatch = new NPatchInfo
-                {
-                    Source = srcSelected,
-                    Left = selectedBorder,
-                    Top = selectedBorder,
-                    Right = selectedBorder,
-                    Bottom = selectedBorder,
-                    Layout = NPatchLayout.NinePatch
-                };
-
-                Raylib.DrawTextureNPatch(_texSelected, selectedNPatch, destSelected, new Vector2(selW / 2f, selH / 2f), 0f, selectedColor);
+                // レイヤー3: フォルダを開閉した瞬間だけ入る、8段階の素早いストロボ点滅
+                byte strobeA = (byte)Math.Clamp(GetFlashStrobeOpacity() * focusEnvelope, 0f, 255f);
+                DrawBarSelectSlice(2, destCenterX, destCenterY, selW, selH, new Color((byte)255, (byte)255, (byte)255, strobeA));
             }
 
             float drawnBarW = barW * boxCenterHorizontalScale;
